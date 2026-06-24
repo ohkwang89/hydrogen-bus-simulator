@@ -1,5 +1,4 @@
-[index.html](https://github.com/user-attachments/files/29277165/index.html)
-# hydrogen-bus-simulator<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
