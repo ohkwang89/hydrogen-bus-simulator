@@ -266,7 +266,7 @@ function updateStats(){
   sv.className='sval'+(pct>0.35?' ok':pct>0.12?' warn':' danger');
   document.getElementById('prodVal').textContent=Math.round(state.totalProd);
   document.getElementById('consVal').textContent=Math.round(state.totalCons);
-  document.getElementById('doneVal').textContent=state.totalChargeCount;
+  document.getElementById('doneVal').textContent=state.totalChargeCount||0;
   document.getElementById('waitVal').textContent=state.arrivedQueue.length;
   const d0=state.disps[0].busy, d1=state.disps[1].busy;
   const ds=d0&&d1?'양쪽 충전 중':d0||d1?'1대 충전 중':'대기중';
@@ -417,7 +417,7 @@ function drawScene(){
   ctx.fillText(qlen+'대',789,67);
 
   // ── 완료 구역 ────────────────────────────────────
-  const dlen=state?state.totalChargeCount:0;
+  const dlen=(state&&state.totalChargeCount)||0;
   rr(ctx,724,296,130,58,8,'#122800','#7FC74B',1);
   ctx.fillStyle='#B8E07A';ctx.font='bold 11px sans-serif';ctx.textAlign='center';
   ctx.fillText('충전 완료',789,317);
@@ -722,10 +722,15 @@ function tick(ts){
     if(!stillMoving){
       running=false;
       const ratio=state.totalProd/Math.max(state.totalCons,1);
+      // 결과 저장 후 state 초기화 (재시작 시 새로 initState 호출되도록)
+      const _count=state.totalChargeCount, _buses=state.buses.length;
+      const _prod=Math.round(state.totalProd), _cons=Math.round(state.totalCons);
+      const _stock=Math.round(state.stock);
+      state=null;
       log('═'.repeat(52));
       log(`✅ 24시간 시뮬레이션 완료`,'log-ok');
-      log(`📊 총 생산 ${Math.round(state.totalProd)}kg | 총 소비 ${Math.round(state.totalCons)}kg | 생산:소비 = ${ratio.toFixed(2)}`,'log-ok');
-      log(`🚌 누적 충전 완료 ${state.totalChargeCount}회 (버스 ${state.buses.length}대 로테이션) | 잔여 재고 ${Math.round(state.stock)}kg`,'log-ok');
+      log(`📊 총 생산 ${_prod}kg | 총 소비 ${_cons}kg | 생산:소비 = ${ratio.toFixed(2)}`,'log-ok');
+      log(`🚌 누적 충전 완료 ${_count}회 (버스 ${_buses}대 로테이션) | 잔여 재고 ${_stock}kg`,'log-ok');
       log(ratio>=1.0
         ?`✔ 수소 생산량 충분 — 여유율 ${Math.round((ratio-1)*100)}%`
         :`⚠ 소비량이 생산량 초과 — 초기 재고 확대 또는 진입 주기 조정 필요`
@@ -755,7 +760,7 @@ document.getElementById('btnStart').addEventListener('click',function(){
     log(`🔵 개질기: 04:00 ~ 익일 04:00 (24h) | 🟡 충전기: 04:00 ~ 24:00 (20h)`);
     log(`버스 ${document.getElementById('busCount').value}대 | 진입주기 ${intervalMin}분 | 충전량 ${CHARGE_MIN}~${CHARGE_MAX}kg 랜덤`);
   }
-  running=true;lastTs=null;
+  running=true;lastTs=null;  // lastTs 초기화 → 일시정지 후 재개 시 dt 폭발 방지
   this.textContent='⏸ 일시정지';
   animId=requestAnimationFrame(tick);
 });
